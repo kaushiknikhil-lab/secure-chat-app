@@ -1,0 +1,84 @@
+/* Existing Styles */
+.home-content {
+  text-align: center;
+  padding: 2rem;
+  background: #f0f2f5; /* Light gray background */
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 4rem auto; /* Center the content and add top margin */
+}
+
+.home-content h2 {
+  color: #128C7E; /* WhatsApp green */
+  margin-bottom: 1rem;
+}
+
+.home-content p {
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.decorative-image {
+  position: absolute;
+  top: 50%; /* Adjust this value to change the vertical position */
+  right: 0; /* Align to the right side */
+  transform: translateY(-50%); /* Center vertically */
+  width: 200px; /* Adjust the width as needed */
+  height: auto; /* Maintain aspect ratio */
+  padding: 10px; /* Adjust padding as needed */
+  margin: 10px; /* Adjust margin as needed */
+  z-index: -1; /* Ensure it doesn't overlap other content */
+  opacity: 0.5; /* Adjust opacity as needed */
+}
+
+.anonymous-chat-button, .register-button, .login-button {
+  display: inline-block;
+  background-color: #128C7E; /* WhatsApp green */
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  margin: 0.5rem;
+}
+
+.anonymous-chat-button:hover, .register-button:hover, .login-button:hover {
+  background-color: #075E54; /* Darker WhatsApp green */
+}
+
+/* New Styles for Screenshot Warning Overlay */
+.screenshot-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.screenshot-warning {
+  background: #b71c1c; /* Red background */
+  color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+  animation: shake 0.5s;
+}
+
+.screenshot-warning p {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}

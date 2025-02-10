@@ -1,0 +1,138 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* Prevent scrolling */
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 4rem); /* Adjust height to account for the navbar */
+  margin-top: 4rem; /* Adjust to be below the navbar */
+}
+
+.chat-content {
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  background: #dee8e7;
+  border-radius: 18px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 9px auto;
+  justify-content: center;
+  align-content: center;
+  flex-wrap: wrap;
+  margin-top: -3rem;
+  margin-bottom: 8rem;
+}
+
+.chat-box {
+  flex: 1;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+  max-height: 500px; /* Fixed height for the chatbox */
+  overflow-y: auto; /* Enable vertical scrolling */
+  width: 100%; /* Set the width of the chatbox */
+}
+
+.chat-message {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 15px;
+  background: #f0f2f5; /* Instagram light gray */
+  max-width: 70%; /* Limit the width of the message bubble */
+  word-wrap: break-word; /* Ensure long messages wrap to the next line */
+}
+
+.chat-message.sender {
+  background: #dcf8c6; /* WhatsApp light green */
+  align-self: flex-end; /* Align sender's messages to the right */
+}
+
+.chat-message.receiver {
+  background: #9cdaa1; /* Light green background for receiver's messages */
+  align-self: flex-start; /* Align receiver's messages to the left */
+}
+
+form.chat-form {
+  display: flex;
+  flex-direction: row; /* Align elements in a row */
+  margin-top: 1rem;
+  background: #fff;
+  padding: 0.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  align-items: center;
+}
+
+form.chat-form input[type="text"] {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 50px;
+  font-size: 1rem;
+  margin-right: 0.5rem;
+}
+
+.attachment-button {
+  cursor: pointer;
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+.file-input {
+  display: none; /* Hide the actual file input */
+}
+
+button {
+  background-color: #128C7E;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #075E54; /* Darker WhatsApp green */
+}
+.recall-button {
+  background-color: transparent;
+  border: none;
+  color: #ff0000;
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin-left: 10px;
+}
+
+.recall-button:hover {
+  text-decoration: underline;
+}
+
+.expiry-input-container {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.expiry-label {
+  margin-right: 10px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.expiry-input {
+  width: 32px;
+  padding: 1px;
+  border: 1px solid #ccc;
+  border-radius: 9px;
+  font-size: 0.9rem;
+}

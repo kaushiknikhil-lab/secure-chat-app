@@ -1,0 +1,45 @@
+.navbar {
+  display: flex
+;
+  justify-content: space-around;
+  align-items: center;
+  background-color: #128C7E;
+  padding: 1rem;
+  color: #fff;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  flex-direction: row;
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  color: #fff;
+  text-decoration: none;
+}
+
+.navbar-links {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-links li {
+  display: inline;
+}
+
+.navbar-links a {
+  color: #fff;
+  text-decoration: none;
+  padding-left: 22rem;
+  padding-right: 0rem;
+}
+
+.navbar-links a:hover {
+  text-decoration: underline;
+}
+
+.navbar-contact {
+  margin-left: auto; /* Pushes the contact link to the far right */
+}

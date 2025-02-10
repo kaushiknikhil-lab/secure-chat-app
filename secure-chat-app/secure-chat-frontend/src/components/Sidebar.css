@@ -1,0 +1,66 @@
+.menu-button {
+  background: #128c7e;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1100; /* Ensure the button is above the sidebar */
+  transition: opacity 0.3s ease;
+}
+
+.menu-button.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar {
+  width: 250px;
+  background: #f0f2f5;
+  padding: 1rem;
+  border-right: 1px solid #ccc;
+  position: fixed;
+  top: 4rem;
+  left: -283px;
+  height: calc(100% - 4rem);
+  transition: left 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar.open {
+  left: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #128C7E; /* WhatsApp green */
+}
+
+.sidebar h2 {
+  color: #128C7E; /* WhatsApp green */
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  margin-bottom: 1rem;
+}
+
+.sidebar ul li a {
+  color: #128C7E; /* WhatsApp green */
+  text-decoration: none;
+}
+
+.sidebar ul li a:hover {
+  text-decoration: underline;
+}

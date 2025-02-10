@@ -1,0 +1,50 @@
+.search-container {
+  padding: 1rem;
+}
+
+.search-container form {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.search-container input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.search-button {
+  background: none; /* Remove background */
+  border: none; /* Remove border */
+  cursor: pointer;
+  margin-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* Remove padding */
+}
+
+.search-button:hover {
+  background-color: #eff3f2; /* Darker WhatsApp green */
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.search-container ul {
+  list-style: none;
+  padding: 0;
+}
+
+.search-container ul li {
+  padding: 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid #ccc;
+}
+
+.search-container ul li:hover {
+  background-color: #f0f2f5; /* Instagram light gray */
+}
