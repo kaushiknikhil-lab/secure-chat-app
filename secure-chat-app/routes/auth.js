@@ -4,6 +4,8 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authenticate = require('../middleware/auth');
+const { generateOTP, sendOTPEmail, verifyOTP } = require('./otpServices');
+
 
 // Register route
 router.post('/register', async (req, res) => {
@@ -65,6 +67,36 @@ router.get('/users/search', authenticate, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// Login Route - Generate and Send OTP
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ error: 'User not found' });
+
+  const validPassword = await bcrypt.compare(password, user.password);
+  if (!validPassword) return res.status(400).json({ error: 'Invalid credentials' });
+
+  const otp = generateOTP(email);
+  await sendOTPEmail(email, otp);
+
+  res.json({ message: 'OTP sent to email' });
+});
+
+// OTP Verification Route
+router.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!verifyOTP(email, otp)) {
+    return res.status(400).json({ error: 'Invalid or expired OTP' });
+  }
+
+  // Generate JWT token after OTP verification
+  const user = await User.findOne({ email });
+  const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+  res.json({ message: 'OTP verified', token });
 });
 
 module.exports = router;

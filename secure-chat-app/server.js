@@ -7,6 +7,7 @@ const { Server } = require('socket.io');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const authRoutes = require('./routes/auth');
+const otpServiceRoutes = require('./routes/otpServices');
 const messageRoutes = require('./routes/messages');
 const groupRoutes = require('./routes/groups');
 const userRoutes = require('./routes/users'); // Ensure this line is present
@@ -57,7 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/users', userRoutes); // Ensure this line is present
-
+app.use('/api/otpServices', otpServiceRoutes);
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'secure-chat-frontend', 'build')));
 
@@ -123,17 +124,21 @@ io.on('connection', (socket) => {
   socket.on('sendMessage', (message) => {
     console.log('Received sendMessage event:', message);
 
-    // Emit to receiver
-    const receiverSocket = users.get(message.to);
-    if (receiverSocket) {
-      io.to(receiverSocket).emit('receiveMessage', message);
+    try {
+      // Emit to receiver
+      const receiverSocket = users.get(message.to);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit('receiveMessage', message);
 
-      // Notify sender using client's original ID
-      socket.emit('messageStatus', {
-        id: message.id, // Use client's ID
-        status: 'delivered',
-      });
-      console.log(`Message ${message.id} delivered to ${message.to}`);
+        // Notify sender using client's original ID
+        socket.emit('messageStatus', {
+          id: message.id, // Use client's ID
+          status: 'delivered',
+        });
+        console.log(`Message ${message.id} delivered to ${message.to}`);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
   });
 
@@ -141,28 +146,32 @@ io.on('connection', (socket) => {
   socket.on('messageRead', async (messageId) => {
     console.log('Received messageRead event:', messageId);
 
-    // Find the message sender
-    const message = await Message.findById(messageId.id);
-    if (!message) {
-      console.error('Message not found:', messageId.id);
-      return;
-    }
+    try {
+      // Find the message sender
+      const message = await Message.findById(messageId.id);
+      if (!message) {
+        console.error('Message not found:', messageId.id);
+        return;
+      }
 
-    // Check if the receiver is in incognito mode
-    const receiver = await User.findById(message.receiver);
-    if (receiver && receiver.isIncognito) {
-      console.log(`User ${receiver._id} is in incognito mode. Not emitting read status.`);
-      return;
-    }
+      // Check if the receiver is in incognito mode
+      const receiver = await User.findById(message.receiver);
+      if (receiver && receiver.isIncognito) {
+        console.log(`User ${receiver._id} is in incognito mode. Not emitting read status.`);
+        return;
+      }
 
-    // Emit read status to sender
-    const senderSocket = users.get(message.sender);
-    if (senderSocket) {
-      io.to(senderSocket).emit('messageStatus', {
-        id: messageId.id,
-        status: 'read',
-      });
-      console.log(`Message ${messageId.id} read by ${messageId.senderId}`);
+      // Emit read status to sender
+      const senderSocket = users.get(message.sender);
+      if (senderSocket) {
+        io.to(senderSocket).emit('messageStatus', {
+          id: messageId.id,
+          status: 'read',
+        });
+        console.log(`Message ${messageId.id} read by ${messageId.senderId}`);
+      }
+    } catch (error) {
+      console.error('Error handling message read status:', error);
     }
   });
 
