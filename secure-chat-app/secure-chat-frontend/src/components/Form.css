@@ -38,3 +38,28 @@
 .form-container button:hover {
   background-color: #075E54; /* Darker WhatsApp green */
 }
+.otp-form {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.otp-input {
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  font-size: 20px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.3s;
+  -moz-appearance: textfield; /* Remove arrows in Firefox */
+}
+
+/* Remove number input arrows in Chrome, Safari, Edge, and Opera */
+.otp-input::-webkit-outer-spin-button,
+.otp-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
