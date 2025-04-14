@@ -1,50 +1,163 @@
+/* Container for the search box */
 .search-container {
-  padding: 1rem;
-}
-
-.search-container form {
-  display: flex;
-  margin-bottom: 1rem;
-}
-
-.search-container input {
-  flex: 1;
+  width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  background: transparent;
+  position: relative;
+}
+
+/* Search form styles */
+.search-form {
+  margin-bottom: 0.5rem;
+}
+
+.search-input-group {
+  display: flex;
+  align-items: center;
+  background: #f0f2f5;
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+/* Input field styles */
+.search-input {
+  flex: 1;
+  border: none;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  background: transparent;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #65676b;
 }
 
 .search-button {
-  background: none; /* Remove background */
-  border: none; /* Remove border */
+  background: none;
+  border: none;
+  padding: 0.5rem;
   cursor: pointer;
-  margin-left: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0; /* Remove padding */
+  transition: transform 0.2s;
 }
 
 .search-button:hover {
-  background-color: #eff3f2; /* Darker WhatsApp green */
+  transform: scale(1.1);
 }
 
 .search-icon {
-  width: 20px;
-  height: 20px;
+  color: #65676b;
+  font-size: 1rem;
 }
 
-.search-container ul {
-  list-style: none;
-  padding: 0;
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  margin-top: 0.5rem;
+  width: 100%;
 }
 
-.search-container ul li {
-  padding: 0.5rem;
+/* Individual result item */
+.user-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  border-bottom: 1px solid #ccc;
+  transition: background-color 0.2s;
 }
 
-.search-container ul li:hover {
-  background-color: #f0f2f5; /* Instagram light gray */
+.user-result:hover {
+  background-color: #f5f5f5;
+}
+
+.user-result:last-child {
+  border-bottom: none;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.username {
+  font-weight: 500;
+  color: #333;
+}
+
+.status {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+  display: inline-block;
+  width: fit-content;
+}
+
+.status.online {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status.offline {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.loading {
+  text-align: center;
+  padding: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #dc3545;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  background-color: #ffebee;
+  border-radius: 4px;
+  margin: 0.5rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 1rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Scrollbar styling */
+.search-results::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-results::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.search-results::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

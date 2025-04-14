@@ -1,0 +1,131 @@
+/* Enhanced Welcome container */
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  min-height: 100%;
+  background-color: #f8fafc;
+  overflow-y: auto;
+}
+
+.welcome-content {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Feature styling */
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  margin: 40px auto;
+}
+
+.feature {
+  flex: 1;
+  min-width: 280px;
+  max-width: 320px;
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.feature:hover {
+  transform: translateY(-4px);
+}
+
+.feature-icon {
+  display: inline-block;
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+/* Notification styling - prominent and clear */
+.welcome-notifications {
+  margin-top: 40px;
+  padding: 24px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  text-align: left;
+  border-left: 5px solid #0891b2;
+}
+
+.welcome-notifications h3 {
+  color: #0891b2;
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.welcome-notifications h3::before {
+  content: "🔔";
+  margin-right: 8px;
+}
+
+.welcome-notification {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #f0f9ff;
+  margin-bottom: 16px;
+  border: 1px solid #bae6fd;
+}
+
+.welcome-notification h4 {
+  color: #0c4a6e;
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+}
+
+.notification-message {
+  padding: 16px;
+  background-color: white;
+  border-radius: 6px;
+  margin: 12px 0;
+  font-weight: 500;
+}
+
+.notification-instructions {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #ecfeff;
+  border-radius: 6px;
+}
+
+.notification-instructions p {
+  font-weight: 600;
+  color: #0e7490;
+  margin-bottom: 8px;
+}
+
+.notification-instructions ol {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+
+.notification-instructions li {
+  margin-bottom: 6px;
+  color: #0c4a6e;
+}
+
+.start-chat-button {
+  background-color: #0891b2;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.start-chat-button:hover {
+  background-color: #0e7490;
+}

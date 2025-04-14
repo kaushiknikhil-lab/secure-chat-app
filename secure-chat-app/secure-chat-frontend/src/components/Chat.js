@@ -3,49 +3,140 @@ import { io } from "socket.io-client";
 import CryptoJS from "crypto-js";
 import Sidebar from "./Sidebar";
 import "./Chat.css";
+import Welcome from './Welcome';
 
-const Chat = ({ token, username }) => {
-  // Socket initialization
-  const socket = useMemo(
-    () =>
-      io("http://localhost:5000", {
-        transports: ["websocket"],
-        auth: {
-          token: token === "anonymous-token" ? "anonymous" : token,
-        },
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-      }),
-    [token]
+const Message = ({ message, isOwnMessage }) => {
+  return (
+    <div className={`message ${isOwnMessage ? 'own-message' : 'other-message'}`}>
+      <div className="message-content">
+        {message.type === 'file' ? (
+          <div className="file-message">
+            <a href={message.file} download={message.fileName}>
+              📎 {message.fileName}
+            </a>
+          </div>
+        ) : (
+          <>
+            {!isOwnMessage && <div className="message-sender">{message.sender || message.user}</div>}
+            <p>{message.message}</p>
+            <div className="message-time">
+              {new Date(message.timestamp).toLocaleTimeString()}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
+};
 
-  // State management
+const Notifications = ({ notifications, onNotificationClick, onClose }) => {
+  return (
+    <div className="notifications-panel">
+      <div className="notifications-header">
+        <h3>New Messages</h3>
+        <button className="panel-close" onClick={onClose}>×</button>
+      </div>
+      
+      {notifications.map((notification, index) => (
+        <div 
+          key={notification.id || index} 
+          className="notification"
+          onClick={() => onNotificationClick(notification)}
+        >
+          <div className="notification-header">
+            <strong>{notification.senderUsername}</strong>
+            <span className="notification-time">
+              {new Date(notification.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </span>
+          </div>
+          <p className="notification-message">{notification.message}</p>
+          {notification.roomCode && (
+            <div className="room-code">
+              <p>Room Code: {notification.roomCode}</p>
+              <button 
+                className="join-room-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `/anonymous?code=${notification.roomCode}`;
+                }}
+              >
+                Join Room
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+      
+      <div className="notification-help">
+        <p>To start chatting with the sender, please:</p>
+        <ol>
+          <li>Click on any notification to start chatting with that person</li>
+          <li>Or click on the menu icon (☰) in the top left</li>
+          <li>Search for the user's username and click to start chatting</li>
+        </ol>
+      </div>
+    </div>
+  );
+};
+
+const Chat = ({ token, username, roomCode, isAnonymous }) => {
+  const [selectedUser, setSelectedUser] = useState(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
   const [currentUsername, setCurrentUsername] = useState(username);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [expiryTime, setExpiryTime] = useState(0);
   const [attachedFile, setAttachedFile] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isIncognito, setIsIncognito] = useState(false); // Incognito mode state
-  const [messageStatuses, setMessageStatuses] = useState({}); // Track message statuses
+  const [isIncognito, setIsIncognito] = useState(false);
+  const [incognitoLoading, setIncognitoLoading] = useState(false);
   const secretKey = process.env.REACT_APP_SECRET_KEY;
 
-  // Ref for current username to avoid stale closures
   const currentUsernameRef = useRef(username);
+  const currentUserIdRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  // Sync ref with state changes
   useEffect(() => {
     currentUsernameRef.current = currentUsername;
-  }, [currentUsername]);
+    currentUserIdRef.current = currentUserId;
+  }, [currentUsername, currentUserId]);
 
-  // Main effect for connection logic
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const socket = useMemo(() => {
+    const newSocket = io("http://localhost:5000", {
+      transports: ["websocket"],
+      auth: {
+        token: token === "anonymous-token" ? "anonymous" : token,
+      },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    newSocket.on("connect", () => {
+      console.log("Socket connected successfully", newSocket.id);
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err);
+    });
+
+    return newSocket;
+  }, [token]);
+
   useEffect(() => {
     const fetchUsername = async () => {
       if (token === "anonymous-token") {
         setCurrentUsername(username);
-        socket.emit("registerUser", "anonymous");
+        setCurrentUserId(null);
+        socket.emit("login", "anonymous");
         return;
       }
 
@@ -62,186 +153,167 @@ const Chat = ({ token, username }) => {
 
         const data = await response.json();
         setCurrentUsername(data.username);
-        socket.emit("registerUser", data._id);
+        setCurrentUserId(data._id);
+        socket.emit("login", data._id);
       } catch (error) {
         console.error("Error fetching username:", error);
       }
     };
 
-    // Message handlers using refs
-    const handleReceivedMessage = (encryptedMessage) => {
-      console.log("Received message:", encryptedMessage);
-      const bytes = CryptoJS.AES.decrypt(encryptedMessage.message, secretKey);
-      const decryptedMessage = bytes.toString(CryptoJS.enc.Utf8);
-      const msg = { ...encryptedMessage, message: decryptedMessage };
-
-      if (msg.user === currentUsernameRef.current) return;
-      setMessages((prev) => [...prev, msg]);
-    };
-
-    const handleReceivedFile = (encryptedFileMessage) => {
-      console.log("Received file message:", encryptedFileMessage);
-      try {
-        const fileBytes = CryptoJS.AES.decrypt(
-          encryptedFileMessage.file,
-          secretKey
-        );
-        const decryptedBase64 = fileBytes.toString(CryptoJS.enc.Base64);
-        const decryptedFile = `data:${encryptedFileMessage.fileType};base64,${decryptedBase64}`;
-
-        setMessages((prev) => [
-          ...prev,
-          { ...encryptedFileMessage, file: decryptedFile },
-        ]);
-      } catch (error) {
-        console.error("File decryption error:", error);
-      }
-    };
-
-    // Handle message status updates
-    const handleMessageStatus = (status) => {
-      console.log(`Message ${status.id} status updated: ${status.status}`);
-      setMessageStatuses((prev) => ({ ...prev, [status.id]: status.status }));
-    };
-
-    // Setup event listeners
     fetchUsername();
-    socket.on("receiveMessage", handleReceivedMessage);
-    socket.on("receiveFile", handleReceivedFile);
-    socket.on("messageStatus", handleMessageStatus);
-    socket.on("messageRecalled", (messageId) => {
-      
-      setMessages((prev) => prev.filter((msg) => msg.id !== messageId.id));
-    });
+  }, [socket, token, username]);
 
-    // Cleanup function
-    return () => {
-      if (socket.connected) {
-        socket.disconnect();
-      }
-      socket.off("receiveMessage", handleReceivedMessage);
-      socket.off("receiveFile", handleReceivedFile);
-      socket.off("messageStatus", handleMessageStatus);
-      socket.off("messageRecalled");
-    };
-  }, [token, username, secretKey, socket]);
-
-  // Add connection status handling
   useEffect(() => {
-    const handleConnect = () => {
-      console.log("Socket connected");
-      setIsConnected(true);
-      if (token === "anonymous-token") {
-        socket.emit("registerUser", "anonymous");
+    const handleIncomingMessage = (data) => {
+      console.log("Incoming message:", data);
+      console.log("Selected user:", selectedUser);
+
+      // Decrypt message if needed
+      let messageContent = data.message;
+      if (!data.isIncognito && messageContent && typeof messageContent === "string" && messageContent.startsWith("U2F")) {
+        try {
+          messageContent = CryptoJS.AES.decrypt(messageContent, secretKey).toString(CryptoJS.enc.Utf8);
+        } catch (err) {
+          console.error("Decryption failed:", err);
+        }
       }
-    };
 
-    const handleDisconnect = () => {
-      console.log("Socket disconnected");
-      setIsConnected(false);
-    };
+      // Create message object
+      const newMessage = {
+        ...data,
+        id: data.id || `msg_${Date.now()}`,
+        message: messageContent,
+        sender: data.sender || "Unknown",
+        timestamp: data.timestamp || Date.now(),
+        isOwnMessage: false
+      };
 
-    const handleConnectError = (err) => {
-      console.error("Connection error:", err);
-    };
+      // Always add to messages
+      setMessages(prev => [...prev, newMessage]);
 
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("connect_error", handleConnectError);
+      // Only create notification if not from current chat AND message is from another user
+      const isCurrentChat = selectedUser && 
+        (selectedUser._id === data.senderId || 
+         selectedUser.username === data.sender);
+      const isCurrentUser = data.senderId === currentUserIdRef.current;
 
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("connect_error", handleConnectError);
-    };
-  }, [socket, token]);
+      if (!isCurrentChat && !isCurrentUser) {
+        const newNotification = {
+          id: newMessage.id,
+          senderUsername: data.sender || "Unknown User",
+          senderId: data.senderId,
+          message: messageContent || "New message",
+          timestamp: newMessage.timestamp
+        };
 
-  // Track message reads
-  useEffect(() => {
-    const unreadMessages = messages.filter(
-      (msg) => msg.user !== currentUsername && !messageStatuses[msg.id]
-    );
-
-    if (unreadMessages.length > 0) {
-      unreadMessages.forEach((msg) => {
-        console.log("Marking message as read:", msg.id);
-        socket.emit("messageRead", {
-          id: msg.id,
-          senderId: msg.user === "anonymous" ? "anonymous" : msg.user._id,
+        setNotifications(prev => {
+          if (prev.some(n => n.id === newNotification.id)) {
+            return prev;
+          }
+          return [...prev, newNotification];
         });
-      });
-    }
-  }, [messages, currentUsername, socket, messageStatuses]);
+      }
+    };
 
-  const encryptMessage = (message, secretKey) => {
-    return CryptoJS.AES.encrypt(message, secretKey).toString();
+    // Setup listeners
+    socket.on("privateMessage", handleIncomingMessage);
+    socket.on("message", handleIncomingMessage);
+    socket.on("newMessage", handleIncomingMessage);
+    socket.on("receiveMessage", handleIncomingMessage);
+    
+    return () => {
+      socket.off("privateMessage", handleIncomingMessage);
+      socket.off("message", handleIncomingMessage);
+      socket.off("newMessage", handleIncomingMessage);
+      socket.off("receiveMessage", handleIncomingMessage);
+    };
+  }, [selectedUser, socket, secretKey, currentUserIdRef]);
+
+  const handleNotificationClick = (notification) => {
+    console.log("Notification clicked:", notification);
+
+    if (notification.senderId) {
+      console.log("Fetching user data for:", notification.senderId);
+
+      fetchUserById(notification.senderId)
+        .then(user => {
+          if (user) {
+            console.log("Found user, selecting:", user);
+            setSelectedUser(user);
+
+            // Remove this notification now that we've handled it
+            setNotifications(prev => 
+              prev.filter(n => n.id !== notification.id)
+            );
+          } else {
+            console.error("User not found for ID:", notification.senderId);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching user:", err);
+        });
+    } else {
+      console.warn("No sender ID in notification:", notification);
+    }
+  };
+
+  const fetchUserById = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return null;
+    }
   };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!isConnected) return;
+    if (!message.trim()) return;
 
-    const clientMessageId = Date.now(); // Generate client-side ID
+    if (!selectedUser) return;
 
-    const newMessage = {
-      id: clientMessageId, // Use client-generated ID
-      message: encryptMessage(message, secretKey),
+    const messageId = generateId();
+
+    const messageObj = {
+      id: messageId,
+      message: message,
       user: currentUsername,
-      to: selectedUser?._id,
-      timestamp: new Date(),
+      timestamp: Date.now(),
+      status: 'sent',
       expiryTime: expiryTime > 0 ? Date.now() + expiryTime * 60000 : null,
-      fileType: attachedFile?.type,
     };
 
-    socket.emit("sendMessage", newMessage);
+    setMessages(prev => [...prev, messageObj]);
 
-    // Add temporary status for immediate UI update
-    setMessageStatuses((prev) => ({
-      ...prev,
-      [clientMessageId]: "sent",
-    }));
-
-    if (attachedFile) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const fileData = event.target.result;
-        const base64Data = fileData.split(",")[1];
-        const encryptedFile = CryptoJS.AES.encrypt(
-          base64Data,
-          secretKey
-        ).toString();
-
-        socket.emit("sendFile", {
-          ...newMessage,
-          file: encryptedFile,
-          fileType: attachedFile.type,
-        });
-
-        setMessages((prev) => [
-          ...prev,
-          { ...newMessage, message: message, file: fileData },
-        ]);
-
-        setAttachedFile(null);
-      };
-      reader.readAsDataURL(attachedFile);
-    } else {
-      setMessages((prev) => [...prev, { ...newMessage, message: message }]);
+    let messageToSend = messageObj.message;
+    if (!isIncognito) {
+      messageToSend = CryptoJS.AES.encrypt(messageToSend, secretKey).toString();
     }
 
+    // Send the message to the selected user
+    socket.emit("sendMessage", {
+      id: messageId,
+      message: messageToSend,
+      receiverId: selectedUser._id,
+      expiryTime: messageObj.expiryTime,
+    });
+
     setMessage("");
-  };
+    setExpiryTime(0);
 
-  const handleRecallMessage = (mssage) => {
-    socket.emit("recallMessage", mssage);
-    setMessages((prevMessages) =>
-      prevMessages.filter((msg) => msg.id !== mssage.id)
-    );
-  };
-
-  const handleSelectUser = (user) => {
-    setSelectedUser(user);
-    setMessages([]);
+    if (attachedFile) {
+      setAttachedFile(null);
+      document.getElementById("file-input").value = "";
+    }
   };
 
   const handleAttachmentClick = () => {
@@ -261,159 +333,159 @@ const Chat = ({ token, username }) => {
     setAttachedFile(file);
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setMessages((prevMessages) =>
-        prevMessages.filter((msg) => !msg.expiryTime || now < msg.expiryTime)
-      );
-    }, 60000);
+  const generateRandomBytes = (length) => {
+    const array = new Uint8Array(length);
+    window.crypto.getRandomValues(array);
+    return array;
+  };
 
-    return () => clearInterval(interval);
-  }, []);
+  const generateId = () => {
+    const bytes = generateRandomBytes(16);
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  };
 
-  // Add useEffect for incognito mode
-  useEffect(() => {
-    if (token === "anonymous-token") return;
-
-    const updateIncognito = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/api/users/incognito",
-          {
-            // Ensure the correct URL
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ isIncognito }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to update incognito mode");
-        }
-
-        const data = await response.json();
-        console.log("Incognito mode updated:", data);
-      } catch (error) {
-        console.error("Failed to update incognito mode:", error);
-      }
-    };
-
-    updateIncognito();
-  }, [isIncognito, token]);
-
-  const toggleIncognito = () => {
-    setIsIncognito((prev) => !prev);
+  const toggleIncognito = async () => {
+    if (incognitoLoading) return;
+    
+    setIncognitoLoading(true);
+    try {
+      const newIncognitoState = !isIncognito;
+      setIsIncognito(newIncognitoState);
+    } catch (error) {
+      console.error('Error toggling incognito mode:', error);
+    } finally {
+      setIncognitoLoading(false);
+    }
   };
 
   return (
     <div className="app-container">
       <div className="watermark-overlay"></div>
       <div className="chat-container">
-        <Sidebar token={token} onSelectUser={handleSelectUser} />
-        <div className="chat-content">
-          {token === "anonymous-token" && (
-            <p className="anonymous-message">
-              You are chatting anonymously as {currentUsername}
-            </p>
-          )}
-          <button onClick={toggleIncognito}>
-            {isIncognito ? "Disable Incognito Mode" : "Enable Incognito Mode"}
+        {notifications.length > 0 && (
+          <button 
+            className="notification-toggle-button"
+            onClick={() => setShowNotificationsPanel(!showNotificationsPanel)}
+          >
+            🔔 Notifications ({notifications.length})
           </button>
-          <div className="chat-box">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`chat-message ${
-                  msg.user === currentUsername ? "sender" : "receiver"
-                }`}
-              >
-                <strong>{msg.user}:</strong> {msg.message}
-                {msg.file && (
-                  <div className="file-preview">
-                    {msg.file.startsWith("data:image/") ? (
-                      <img
-                        src={msg.file}
-                        alt="Sent content"
-                        style={{ maxWidth: "200px", maxHeight: "200px" }}
-                      />
+        )}
+        
+        <Sidebar token={token} onSelectUser={setSelectedUser} selectedUser={selectedUser} />
+        <div className="chat-content">
+          {!selectedUser ? (
+             <Welcome 
+             username={currentUsername} 
+             notifications={notifications}
+             onNotificationClick={handleNotificationClick}
+           />
+          ) : (
+            <>
+              <div className="chat-header">
+                <div className="user-info">
+                  <h2>Chat with {selectedUser.username}</h2>
+                  <div className="user-status">
+                    {selectedUser.isOnline ? (
+                      <span className="online-indicator">● Online</span>
                     ) : (
-                      <a
-                        href={msg.file}
-                        download={`file_${msg.id}.${
-                          msg.fileType?.split("/")[1] || "dat"
-                        }`}
-                      >
-                        Download File
-                      </a>
+                      <span className="offline-indicator">○ Offline</span>
                     )}
                   </div>
-                )}
-                {msg.user === currentUsername && (
-                  <span className="message-status">
-                    {messageStatuses[msg.id] === "read"
-                      ? "✓✓ Read"
-                      : messageStatuses[msg.id] === "delivered"
-                      ? "✓✓ Delivered"
-                      : "✓ Sent"}
-                  </span>
-                )}
-                {msg.user === currentUsername && (
+                </div>
+                <div className="incognito-control">
                   <button
-                    className="recall-button"
-                    onClick={() => handleRecallMessage(msg)}
+                    className={`incognito-toggle ${isIncognito ? "active" : ""} ${
+                      incognitoLoading ? "loading" : ""
+                    }`}
+                    onClick={toggleIncognito}
+                    disabled={incognitoLoading || token === "anonymous-token"}
                   >
-                    Recall
+                    {incognitoLoading ? (
+                      <span>Loading...</span>
+                    ) : (
+                      isIncognito ? "🔒 Incognito Mode" : "👤 Normal Mode"
+                    )}
                   </button>
-                )}
+                </div>
               </div>
-            ))}
-          </div>
-          <form className="chat-form" onSubmit={handleSendMessage}>
-            <input
-              type="text"
-              placeholder="Type a message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <label
-              htmlFor="file-input"
-              className="attachment-button"
-              onClick={handleAttachmentClick}
-            >
-              📎
-            </label>
-            <input
-              id="file-input"
-              type="file"
-              className="file-input"
-              onChange={handleFileChange}
-            />
-            {attachedFile && (
-              <p className="attached-file">
-                Attached: {attachedFile.name} (
-                {Math.round(attachedFile.size / 1024)} KB)
-              </p>
-            )}
-            <div className="expiry-input-container">
-              <label htmlFor="expiry-time" className="expiry-label">
-                Expiry time (minutes):
-              </label>
-              <input
-                id="expiry-time"
-                type="number"
-                className="expiry-input"
-                placeholder="Expiry time (minutes)"
-                value={expiryTime}
-                onChange={(e) => setExpiryTime(Number(e.target.value))}
-              />
-            </div>
-            <button type="submit">Send</button>
-          </form>
+              <div className="chat-box">
+                <div className="chat-messages">
+                  {messages
+                    .filter(msg => 
+                      !selectedUser || 
+                      msg.user === currentUsername || 
+                      msg.sender === selectedUser.username || 
+                      msg.senderId === selectedUser._id
+                    )
+                    .map((msg, index) => (
+                      <Message
+                        key={msg.id || index}
+                        message={msg}
+                        isOwnMessage={msg.user === currentUsername || msg.isOwnMessage}
+                      />
+                    ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+              <form className="chat-form" onSubmit={handleSendMessage}>
+                <input
+                  type="text"
+                  id="message-input"
+                  name="message"
+                  placeholder="Type a message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  autoComplete="off"
+                />
+                <label
+                  htmlFor="file-input"
+                  className="attachment-button"
+                  onClick={handleAttachmentClick}
+                >
+                  📎
+                </label>
+                <input
+                  id="file-input"
+                  name="file"
+                  type="file"
+                  className="file-input"
+                  onChange={handleFileChange}
+                />
+                {attachedFile && (
+                  <p className="attached-file">
+                    Attached: {attachedFile.name} (
+                    {Math.round(attachedFile.size / 1024)} KB)
+                  </p>
+                )}
+                <div className="expiry-input-container">
+                  <label htmlFor="expiry-time" className="expiry-label">
+                    Expiry time (minutes):
+                  </label>
+                  <input
+                    id="expiry-time"
+                    name="expiryTime"
+                    type="number"
+                    className="expiry-input"
+                    placeholder="0"
+                    value={expiryTime}
+                    onChange={(e) => setExpiryTime(Number(e.target.value))}
+                    min="0"
+                  />
+                </div>
+                <button type="submit" id="send-button" name="send">
+                  Send
+                </button>
+              </form>
+            </>
+          )}
         </div>
+        {showNotificationsPanel && notifications.length > 0 && (
+          <Notifications 
+            notifications={notifications} 
+            onNotificationClick={handleNotificationClick}
+            onClose={() => setShowNotificationsPanel(false)} 
+          />
+        )}
       </div>
     </div>
   );

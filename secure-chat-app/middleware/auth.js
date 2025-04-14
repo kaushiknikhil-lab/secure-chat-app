@@ -3,8 +3,10 @@ const jwt = require('jsonwebtoken');
 const authenticate = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   
-  if (!token) {
-    return res.status(401).json({ error: 'Authentication required' });
+  // Allow anonymous requests
+  if (!token || token === 'anonymous-token') {
+    req.user = { id: null, isAnonymous: true };
+    return next();
   }
 
   try {

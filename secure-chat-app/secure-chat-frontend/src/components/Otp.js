@@ -41,37 +41,37 @@ export default function Otp() {
         email,
         otp: otpValue,
       });
-      alert("Registration successful");
-
+      alert("Verification successful");
       navigate("/login");
     } catch (error) {
       if (error.response && error.response.data) {
         alert(error.response.data.error);
       } else {
-        alert("An error occurred during registration.");
+        alert("An error occurred during verification.");
       }
     }
   };
 
   return (
     <div className="form-container">
-      <h2>Verify OTP</h2>
-      <form className="otp-form">
+      <h2>Enter Verification Code</h2>
+      <p>Please enter the verification code sent to your email</p>
+      <div className="otp-inputs">
         {otp.map((digit, index) => (
           <input
             key={index}
             id={`otp-input-${index}`}
             type="text"
-            maxLength="1"
-            className="otp-input"
+            maxLength={1}
             value={digit}
             onChange={(e) => handleChange(index, e)}
             onKeyDown={(e) => handleKeyDown(index, e)}
+            className="otp-input"
           />
         ))}
-      </form>
-      <button className="otp-submit" onClick={handleSubmit}>
-        Submit
+      </div>
+      <button onClick={handleSubmit} className="submit-button">
+        Verify
       </button>
     </div>
   );

@@ -1,22 +1,32 @@
 .form-container {
   background: #fff;
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  margin: 5rem auto 2rem; /* Add top margin to push the form below the navbar */
+  width: 350px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .form-container h2 {
   color: #128C7E; /* WhatsApp green */
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   font-family: 'Arial', sans-serif;
+  text-align: center;
+}
+
+.form-container p {
+  text-align: center;
+  color: #666;
+  margin-bottom: 1.5rem;
 }
 
 .form-container input {
   width: 100%;
   padding: 0.75rem; /* Increase padding for a more modern look */
-  margin: 0.75rem 0; /* Increase margin for better spacing */
+  margin: 0.5rem 0; /* Increase margin for better spacing */
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 1rem; /* Increase font size for better readability */
@@ -24,9 +34,10 @@
 }
 
 .form-container button {
+  width: 100%;
   background-color: #128C7E; /* WhatsApp green */
   color: #fff;
-  padding: 0.75rem 1.5rem; /* Increase padding for a more modern look */
+  padding: 0.75rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -38,28 +49,68 @@
 .form-container button:hover {
   background-color: #075E54; /* Darker WhatsApp green */
 }
-.otp-form {
+
+.otp-inputs {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-top: 20px;
+  margin: 20px 0;
 }
 
 .otp-input {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   text-align: center;
-  font-size: 20px;
-  border: 2px solid #ccc;
-  border-radius: 5px;
+  font-size: 24px;
+  border: 2px solid #128C7E;
+  border-radius: 8px;
   outline: none;
-  transition: border-color 0.3s;
-  -moz-appearance: textfield; /* Remove arrows in Firefox */
+  transition: all 0.3s ease;
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
-/* Remove number input arrows in Chrome, Safari, Edge, and Opera */
+.otp-input:focus {
+  border-color: #075E54;
+  box-shadow: 0 0 5px rgba(18, 140, 126, 0.3);
+}
+
 .otp-input::-webkit-outer-spin-button,
 .otp-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
+}
+
+.submit-button {
+  background-color: #128C7E;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  font-family: 'Arial', sans-serif;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background-color: #075E54;
+}
+
+/* Responsive styles */
+@media (max-width: 480px) {
+  .form-container {
+    padding: 1.5rem;
+    margin: 3rem auto 1rem;
+  }
+
+  .otp-input {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
 }

@@ -28,10 +28,6 @@ const Sidebar = ({ token, onSelectUser }) => {
           onSelectUser={onSelectUser}
           setIsOpen={setIsOpen}
         />
-        <ul>
-          {/* <li><Link to="/create-group">Create Group</Link></li>
-          <li><Link to="/join-group">Join Group</Link></li> */}
-        </ul>
       </div>
     </div>
   );

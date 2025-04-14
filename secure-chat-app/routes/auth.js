@@ -4,25 +4,62 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authenticate = require('../middleware/auth');
-const { generateOTP, sendOTPEmail, verifyOTP } = require('./otpServices');
+const otpService = require('../routes/otpServices');
 
 
 // Register route
 router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body;
   try {
+    // Validate input
+    if (!username || !password || !email) {
+      return res.status(400).json({ error: 'Please provide username, password and email' });
+    }
+
+    // Check if username already exists
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
+    // Check if email already exists
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword });
+    
+    // Create new user
+    const newUser = new User({ 
+      username, 
+      password: hashedPassword,
+      email,
+      isOnline: false,
+      isIncognito: false
+    });
+    
     await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully' });
+    // Generate and send OTP
+    try {
+      const otp = await otpService.generateOTP(email);
+      await otpService.sendOTPEmail(email, otp);
+      res.status(201).json({ 
+        message: 'User registered successfully. Please check your email for verification code.',
+        email: email
+      });
+    } catch (otpError) {
+      console.error('OTP Error:', otpError);
+      res.status(201).json({ 
+        message: 'User registered successfully but there was an issue sending verification email. Please try again.',
+        email: email
+      });
+    }
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Registration Error:', err);
+    res.status(500).json({ error: 'Server error during registration' });
   }
 });
 
@@ -78,17 +115,16 @@ router.post('/login', async (req, res) => {
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) return res.status(400).json({ error: 'Invalid credentials' });
 
-  const otp = generateOTP(email);
-  await sendOTPEmail(email, otp);
-
-  res.json({ message: 'OTP sent to email' });
+  const otp = await otpService.generateOTP(email);
+  await otpService.sendOTPEmail(email, otp);
+  res.json({ message: 'Verification code sent to your email' });
 });
 
 // OTP Verification Route
 router.post('/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
 
-  if (!verifyOTP(email, otp)) {
+  if (!await otpService.verifyOTP(email, otp)) {
     return res.status(400).json({ error: 'Invalid or expired OTP' });
   }
 
